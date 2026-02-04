@@ -1,0 +1,14 @@
+# BUILDING AND RUNNING: docker compose up -d --build
+# LOGGING: docker logs booking-system-phase2 -f
+# CONNECTING TO CONTAINER: docker exec -it booking-system-phase2 /bin/sh
+# REMOVING: docker compose down --volumes
+# REMOVING IMAGE (IF NEEDED): docker rmi bs-phase2
+name: booking-system-phase2
+services:
+  web:
+    build: .
+    image: bs-phase2
+    ports:
+      - "8081:80"
+    volumes:
+      - ./app:/usr/share/nginx/html
