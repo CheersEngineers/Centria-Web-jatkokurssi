@@ -1,69 +1,28 @@
+// form.js
+// Validation utilities used by resources.js
 
-// ===============================
-// Form handling for resources page
-// ===============================
-
-// -------------- Helpers --------------
-function $(id) {
-  return document.getElementById(id);
+export function isNonEmptyTrimmed(value) {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
-function logSection(title, data) {
-  console.group(title);
-  console.log(data);
-  console.groupEnd();
+export function validateResourceName(name) {
+  // Require at least 2 non-space characters
+  return isNonEmptyTrimmed(name) && name.trim().length >= 2;
 }
 
-// -------------- Form wiring --------------
-document.addEventListener("DOMContentLoaded", () => {
-  const form = $("resourceForm");
-  if (!form) {
-    console.warn("resourceForm not found. Ensure the form has id=\"resourceForm\".");
-    return;
-  }
+export function validateResourceDescription(desc) {
+  // Require at least 5 non-space characters
+  return isNonEmptyTrimmed(desc) && desc.trim().length >= 5;
+}
 
-  form.addEventListener("submit", onSubmit);
-});
-
-async function onSubmit(event) {
-  event.preventDefault();
-  const submitter = event.submitter;
-  const actionValue = submitter && submitter.value ? submitter.value : "create";
-  const payload = {
-    action: actionValue,
-    resourceName: $("resourceName")?.value ?? "",
-    resourceDescription: $("resourceDescription")?.value ?? "",
-    resourceAvailable: $("resourceAvailable")?.value ?? "",
-    resourcePrice: $("resourcePrice")?.value ?? "",
-    resourcePriceUnit: $("resourcePriceUnit")?.value ?? ""
-  };
-
-  logSection("Sending payload to httpbin.org/post", payload);
-
-  try {
-    const response = await fetch("https://httpbin.org/post", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      throw new Error(`HTTP ${response.status} ${response.statusText}\n${text}`);
-    }
-
-    const data = await response.json();
-
-    console.group("Response from httpbin.org");
-    console.log("Status:", response.status);
-    console.log("URL:", data.url);
-    console.log("You sent (echo):", data.json);
-    console.log("Headers (echoed):", data.headers);
-    console.groupEnd();
-
-  } catch (err) {
-    console.error("POST error:", err);
+export function setFieldValidity(fieldEl, isValid, errorEl) {
+  if (!fieldEl) return;
+  fieldEl.classList.remove('valid', 'invalid');
+  if (isValid) {
+    fieldEl.classList.add('valid');
+    if (errorEl) errorEl.classList.remove('visible');
+  } else {
+    fieldEl.classList.add('invalid');
+    if (errorEl) errorEl.classList.add('visible');
   }
 }

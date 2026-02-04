@@ -1,187 +1,151 @@
-// ===============================
-// 1) DOM references
-// ===============================
-const actions = document.getElementById("resourceActions");
-const resourceNameContainer = document.getElementById("resourceNameContainer");
+// resources.js
+import { validateResourceName, validateResourceDescription, setFieldValidity } from './form.js';
 
-// Example roles
-const role = "admin"; // "reserver" | "admin"
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.querySelector('#resourceForm') || document.querySelector('form');
+  if (!form) return;
 
-// Will hold a reference to the Create button so we can enable/disable it
-let createButton = null;
+  const nameInput = form.querySelector('input[name="resourceName"]') || form.querySelector('#resourceName');
+  const descInput = form.querySelector('textarea[name="resourceDescription"]') || form.querySelector('#resourceDescription');
 
-// ===============================
-// 2) Button creation helpers
-// ===============================
+  const createBtn = form.querySelector('#createBtn') || form.querySelector('button[name="create"]');
+  const updateBtn = form.querySelector('#updateBtn') || form.querySelector('button[name="update"]');
+  const deleteBtn = form.querySelector('#deleteBtn') || form.querySelector('button[name="delete"]');
 
-const BUTTON_BASE_CLASSES =
-  "w-full rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 ease-out";
+  const nameError = form.querySelector('#resourceNameError');
+  const descError = form.querySelector('#resourceDescriptionError');
+  const serverMessage = form.querySelector('#serverMessage');
 
-const BUTTON_ENABLED_CLASSES =
-  "bg-brand-primary text-white hover:bg-brand-dark/80 shadow-soft";
+  // Ensure Create disabled by default
+  if (createBtn) createBtn.disabled = true;
 
-const BUTTON_DISABLED_CLASSES =
-  "cursor-not-allowed opacity-50";
+  function validateAll() {
+    const nameVal = nameInput ? nameInput.value : '';
+    const descVal = descInput ? descInput.value : '';
 
-function addButton({ label, type = "button", value, classes = "" }) {
-  const btn = document.createElement("button");
-  btn.type = type;
-  btn.textContent = label;
-  btn.name = "action";
-  if (value) btn.value = value;
+    const nameValid = validateResourceName(nameVal);
+    const descValid = validateResourceDescription(descVal);
 
-  btn.className = `${BUTTON_BASE_CLASSES} ${classes}`.trim();
+    setFieldValidity(nameInput, nameValid, nameError);
+    setFieldValidity(descInput, descValid, descError);
 
-  actions.appendChild(btn);
-  return btn;
-}
-
-function setButtonEnabled(btn, enabled) {
-  if (!btn) return;
-
-  btn.disabled = !enabled;
-
-  // Keep disabled look in ONE place (here)
-  btn.classList.toggle("cursor-not-allowed", !enabled);
-  btn.classList.toggle("opacity-50", !enabled);
-
-  // Optional: remove hover feel when disabled (recommended UX)
-  if (!enabled) {
-    btn.classList.remove("hover:bg-brand-dark/80");
-  } else {
-    // Only re-add if this button is supposed to have it
-    // (for Create we know it is)
-    if (btn.value === "create" || btn.textContent === "Create") {
-      btn.classList.add("hover:bg-brand-dark/80");
-    }
-  }
-}
-
-function renderActionButtons(currentRole) {
-  if (currentRole === "reserver") {
-    createButton = addButton({
-      label: "Create",
-      type: "submit",
-      classes: BUTTON_ENABLED_CLASSES,
-    });
+    const allValid = nameValid && descValid;
+    if (createBtn) createBtn.disabled = !allValid;
+    return { allValid, nameValid, descValid };
   }
 
-  if (currentRole === "admin") {
-    createButton = addButton({
-      label: "Create",
-      type: "submit",
-      value: "create",
-      classes: BUTTON_ENABLED_CLASSES,
-    });
+  // Real-time validation while typing
+  [nameInput, descInput].forEach(el => {
+    if (!el) return;
+    el.addEventListener('input', () => validateAll());
+    el.addEventListener('blur', () => validateAll());
+  });
 
-    updateButton = addButton({
-      label: "Update",
-      value: "update",
-      classes: BUTTON_ENABLED_CLASSES,
-    });
+  // Initial validation pass
+  validateAll();
 
-    deleteButton = addButton({
-      label: "Delete",
-      value: "delete",
-      classes: BUTTON_ENABLED_CLASSES,
-    });
+  function showServerError(message) {
+    if (!serverMessage) return;
+    serverMessage.className = 'server-error';
+    serverMessage.textContent = `Error: ${message}`;
   }
 
-  // Default: Buttons are disabled until validation says it's OK
-  setButtonEnabled(createButton, false);
-  setButtonEnabled(updateButton, false);
-  setButtonEnabled(deleteButton, false);
-}
-
-// ===============================
-// 3) Input creation + validation
-// ===============================
-function createResourceNameInput(container) {
-  const input = document.createElement("input");
-
-  // Core attributes
-  input.id = "resourceName";
-  input.name = "resourceName";
-  input.type = "text";
-  input.placeholder = "e.g., Meeting Room A";
-
-  // Base Tailwind styling (single source of truth)
-  input.className = `
-    mt-2 w-full rounded-2xl border border-black/10 bg-white
-    px-4 py-3 text-sm outline-none
-    focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30
-    transition-all duration-200 ease-out
-  `;
-
-  container.appendChild(input);
-  return input;
-}
-
-function isResourceNameValid(value) {
-  const trimmed = value.trim();
-
-  // Allowed: letters, numbers, Finnish letters, and space (based on your current regex)
-  const allowedPattern = /^[a-zA-Z0-9äöåÄÖÅ ]+$/;
-
-  const lengthValid = trimmed.length >= 5 && trimmed.length <= 30;
-  const charactersValid = allowedPattern.test(trimmed);
-
-  return lengthValid && charactersValid;
-}
-
-function setInputVisualState(input, state) {
-  // Reset to neutral base state (remove only our own validation-related classes)
-  input.classList.remove(
-    "border-green-500",
-    "bg-green-100",
-    "focus:ring-green-500/30",
-    "border-red-500",
-    "bg-red-100",
-    "focus:ring-red-500/30",
-    "focus:border-brand-blue",
-    "focus:ring-brand-blue/30"
-  );
-
-  // Ensure base focus style is present when neutral
-  // (If we are valid/invalid, we override ring color but keep ring behavior)
-  input.classList.add("focus:ring-2");
-
-  if (state === "valid") {
-    input.classList.add("border-green-500", "bg-green-100", "focus:ring-green-500/30");
-  } else if (state === "invalid") {
-    input.classList.add("border-red-500", "bg-red-100", "focus:ring-red-500/30");
-  } else {
-    // neutral: keep base border/bg; nothing else needed
+  function showServerSuccess(message) {
+    if (!serverMessage) return;
+    serverMessage.className = 'server-success';
+    serverMessage.textContent = message;
+    setTimeout(() => {
+      if (serverMessage && serverMessage.className === 'server-success') {
+        serverMessage.textContent = '';
+      }
+    }, 3000);
   }
-}
 
-function attachResourceNameValidation(input) {
-  const update = () => {
-    const raw = input.value;
-    if (raw.trim() === "") {
-      setInputVisualState(input, "neutral");
-      setButtonEnabled(createButton, false);
+  // Build cleaned payload from form fields
+  function buildPayload() {
+    return {
+      name: nameInput ? nameInput.value.trim() : '',
+      description: descInput ? descInput.value.trim() : ''
+      // add other cleaned fields here if present
+    };
+  }
+
+  // Submit handler
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    // Determine which button triggered the submit
+    const submitter = event.submitter || document.activeElement;
+    const action = submitter && submitter.name ? submitter.name : 'submit';
+
+    // Re-validate before sending
+    const { allValid } = validateAll();
+    if (!allValid && action === 'create') {
+      // Do not send invalid payload for create action
       return;
     }
 
-    const valid = isResourceNameValid(raw);
+    // For update/delete you may want different behavior; here we still build payload and send trimmed values
+    const payload = buildPayload();
 
-    setInputVisualState(input, valid ? "valid" : "invalid");
-    setButtonEnabled(createButton, valid);
-  };
+    // UI: disable relevant buttons while request in-flight
+    const buttonsToDisable = [createBtn, updateBtn, deleteBtn].filter(Boolean);
+    buttonsToDisable.forEach(b => b.disabled = true);
 
-  // Real-time validation
-  input.addEventListener("input", update);
+    // Clear previous server message
+    if (serverMessage) {
+      serverMessage.textContent = '';
+      serverMessage.className = '';
+    }
 
-  // Initialize state on page load (Create disabled until valid)
-  update();
-}
+    // Choose endpoint and method based on action (adjust endpoints to match server)
+    let url = '/api/resources';
+    let method = 'POST';
+    if (action === 'update') method = 'PUT';
+    if (action === 'delete') method = 'DELETE';
 
-// ===============================
-// 4) Bootstrapping
-// ===============================
-renderActionButtons(role);
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-// Create + validate input
-const resourceNameInput = createResourceNameInput(resourceNameContainer);
-attachResourceNameValidation(resourceNameInput);
+      if (!res.ok) {
+        // Try to parse JSON error, fallback to text
+        let errText = `Status ${res.status}`;
+        try {
+          const json = await res.json();
+          errText = json.message || JSON.stringify(json);
+        } catch (e) {
+          try { errText = await res.text(); } catch (e2) { }
+        }
+        showServerError(errText || `Server responded ${res.status}`);
+        validateAll();
+        return;
+      }
+
+      // Success
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+      showServerSuccess('Operation successful.');
+
+      // Reset form only for create success
+      if (action === 'create') {
+        form.reset();
+        validateAll();
+      }
+
+      // Dispatch a custom event so other scripts can react (e.g., refresh list)
+      form.dispatchEvent(new CustomEvent('resource:changed', { detail: { action, data } }));
+    } catch (err) {
+      showServerError(err && err.message ? err.message : 'Network error');
+      validateAll();
+    } finally {
+      // Re-enable buttons only if inputs are still valid (for create)
+      const { allValid: stillValid } = validateAll();
+      if (createBtn) createBtn.disabled = !stillValid;
+      [updateBtn, deleteBtn].forEach(b => { if (b) b.disabled = false; });
+    }
+  });
+});
