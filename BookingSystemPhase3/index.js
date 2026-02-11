@@ -1,9 +1,11 @@
+// Load environment variables from .env
 require("dotenv").config();
 
 const express = require("express");
-const app = express();
-const PORT = process.env.PORT;
 const path = require("path");
+
+const app = express();
+const PORT = process.env.PORT || 5000;
 
 // Timestamp
 function timestamp() {
@@ -14,21 +16,22 @@ function timestamp() {
 // --- Middleware ---
 app.use(express.json()); // Parse application/json
 
+// Simple request logger
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+  next();
+});
+
 // Serve everything in ./public as static assets
 const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));
 
-// --- Views (HTML pages) ---
-// GET /  -> serve index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
-});
-
-// Optional: GET /resources -> serve resources.html directly
+// Serve resources.html directly for /resources
 app.get("/resources", (req, res) => {
   res.sendFile(path.join(publicDir, "resources.html"));
 });
 
+// --- API routes ---
 // POST /api/resources -> create/update/delete based on "action"
 app.post("/api/resources", (req, res) => {
   const {
@@ -43,7 +46,7 @@ app.post("/api/resources", (req, res) => {
   // Normalize inputs
   const resourceAction = String(action).trim();
   const name = String(resourceName).trim();
-  const description = "";
+  const description = String(resourceDescription).trim();
   const available = Boolean(resourceAvailable);
   const price = Number.isFinite(Number(resourcePrice))
     ? Number(resourcePrice)
@@ -65,10 +68,18 @@ app.post("/api/resources", (req, res) => {
 // --- Fallback 404 for unknown API routes ---
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found" });
-  res.json({ ok: true });
+});
+
+// --- SPA fallback: serve index.html for non-API routes ---
+app.use((req, res, next) => {
+  // Let API routes pass through
+  if (req.path.startsWith("/api")) return next();
+
+  // Serve index.html for everything else (SPA)
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
 // --- Start server ---
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });

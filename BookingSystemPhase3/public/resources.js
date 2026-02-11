@@ -9,15 +9,16 @@ const role = "admin"; // "reserver" | "admin"
 
 // Will hold a reference to the Create button so we can enable/disable it
 let createButton = null;
+let updateButton = null;
+let deleteButton = null;
 
 // Resource name and description validation status
-let resourceNameValid = false
-let resourceDescriptionValid = false
+let resourceNameValid = false;
+let resourceDescriptionValid = false;
 
 // ===============================
 // 2) Button creation helpers
 // ===============================
-
 const BUTTON_BASE_CLASSES =
   "w-full rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 ease-out";
 
@@ -28,6 +29,11 @@ const BUTTON_DISABLED_CLASSES =
   "cursor-not-allowed opacity-50";
 
 function addButton({ label, type = "button", value, classes = "" }) {
+  if (!actions) {
+    console.warn("Cannot add button, actions container not found");
+    return null;
+  }
+
   const btn = document.createElement("button");
   btn.type = type;
   btn.textContent = label;
@@ -62,6 +68,14 @@ function setButtonEnabled(btn, enabled) {
 }
 
 function renderActionButtons(currentRole) {
+  if (!actions) {
+    console.warn("renderActionButtons: actions container not found");
+    return;
+  }
+
+  // Clear any existing buttons first
+  actions.innerHTML = "";
+
   if (currentRole === "reserver") {
     createButton = addButton({
       label: "Create",
@@ -101,6 +115,11 @@ function renderActionButtons(currentRole) {
 // 3) Input creation + validation
 // ===============================
 function createResourceNameInput(container) {
+  if (!container) {
+    console.warn("createResourceNameInput: container not found");
+    return null;
+  }
+
   const input = document.createElement("input");
 
   // Core attributes
@@ -137,7 +156,7 @@ function isResourceDescriptionValid(value) {
   const trimmed = value.trim();
 
   // Allowed: letters, numbers, Finnish letters, and space (based on your current regex)
-  const allowedPattern = /^[a-zA-Z0-9äöåÄÖÅ ><!\?\-\+\/\\]+$/;
+  const allowedPattern = /^[a-zA-Z0-9äöåÄÖÅ \.,:;()<>!?\-\+\/\\]+$/;
 
   const lengthValid = trimmed.length >= 10 && trimmed.length <= 50;
   const charactersValid = allowedPattern.test(trimmed);
@@ -146,6 +165,11 @@ function isResourceDescriptionValid(value) {
 }
 
 function createResourceDescriptionArea(container) {
+  if (!container) {
+    console.warn("createResourceDescriptionArea: container not found");
+    return null;
+  }
+
   const textarea = document.createElement("textarea");
 
   // Core attributes
@@ -167,6 +191,8 @@ function createResourceDescriptionArea(container) {
 }
 
 function setInputVisualState(input, state) {
+  if (!input) return;
+
   // Reset to neutral base state (remove only our own validation-related classes)
   input.classList.remove(
     "border-green-500",
@@ -193,19 +219,20 @@ function setInputVisualState(input, state) {
 }
 
 function attachResourceNameValidation(input) {
+  if (!input) return;
+
   const update = () => {
     const raw = input.value;
     if (raw.trim() === "") {
       setInputVisualState(input, "neutral");
       setButtonEnabled(createButton, false);
+      resourceNameValid = false;
       return;
     }
 
-    //const valid = isResourceNameValid(raw);
     resourceNameValid = isResourceNameValid(raw);
 
     setInputVisualState(input, resourceNameValid ? "valid" : "invalid");
-    //setButtonEnabled(createButton, valid);
     setButtonEnabled(createButton, resourceNameValid && resourceDescriptionValid);
   };
 
@@ -217,15 +244,17 @@ function attachResourceNameValidation(input) {
 }
 
 function attachResourceDescriptionValidation(input) {
+  if (!input) return;
+
   const update = () => {
     const raw = input.value;
     if (raw.trim() === "") {
       setInputVisualState(input, "neutral");
       setButtonEnabled(createButton, false);
+      resourceDescriptionValid = false;
       return;
     }
 
-    //const valid = isResourceDescriptionValid(raw);
     resourceDescriptionValid = isResourceDescriptionValid(raw);
 
     setInputVisualState(input, resourceDescriptionValid ? "valid" : "invalid");

@@ -1,4 +1,3 @@
-
 // ===============================
 // Form handling for resources page
 // ===============================
@@ -17,6 +16,10 @@ function timestamp() {
 // -------------- Form wiring --------------
 document.addEventListener("DOMContentLoaded", () => {
   const form = $("resourceForm");
+  if (!form) {
+    console.warn("resourceForm not found in DOM");
+    return;
+  }
   form.addEventListener("submit", onSubmit);
 });
 
@@ -30,7 +33,7 @@ async function onSubmit(event) {
 
   const payload = {
     action: actionValue,
-    resourceName: $("resourceNamee")?.value ?? "",
+    resourceName: $("resourceName")?.value ?? "",
     resourceDescription: $("resourceDescription")?.value ?? "",
     resourceAvailable: $("resourceAvailable")?.checked ?? false,
     resourcePrice,
@@ -39,7 +42,8 @@ async function onSubmit(event) {
 
   try {
     console.log("--------------------------");
-    console.log("The request send to the server " + `[${timestamp()}]`);
+    console.log("The request sent to the server " + `[${timestamp()}]`);
+    console.log("Payload:", payload);
     console.log("--------------------------");
     const response = await fetch("/api/resources", {
       method: "POST",
@@ -59,25 +63,20 @@ async function onSubmit(event) {
     let msg = "Server response " + `[${timestamp()}]\n`;
     msg += "--------------------------\n";
     msg += "Status ➡️ " + response.status + "\n";
-    msg += "Action ➡️ " + data.echo.action + "\n";
-    msg += "Name ➡️ "+ data.echo.resourceName + "\n";
-    msg += "Description ➡️ " + data.echo.resourceDescription + "\n";
-    msg += "Availability ➡️ " + data.echo.resourceAvailable + "\n";
-    msg += "Price unit ➡️ " + data.echo.resourcePriceUnit + "\n";
+    msg += "Action ➡️ " + (data.echo?.action ?? "") + "\n";
+    msg += "Name ➡️ " + (data.echo?.resourceName ?? "") + "\n";
+    msg += "Description ➡️ " + (data.echo?.resourceDescription ?? "") + "\n";
+    msg += "Availability ➡️ " + (data.echo?.resourceAvailable ?? "") + "\n";
+    msg += "Price ➡️ " + (data.echo?.resourcePrice ?? "") + "\n";
+    msg += "Price unit ➡️ " + (data.echo?.resourcePriceUnit ?? "") + "\n";
 
     console.log("Server response " + `[${timestamp()}]`);
     console.log("--------------------------");
-    console.log("Status ➡️ ", response.status);
-    console.log("Action ➡️ ", data.echo.action);
-    console.log("Name ➡️ ", data.echo.resourceName);
-    console.log("Description ➡️ ", data.echo.resourceDescription);
-    console.log("Availability ➡️ ", data.echo.resourceAvailable);
-    console.log("Price ➡️ ", data.echo.resourcePrice);
-
-    console.log("--------------------------");
+    console.log(msg);
     alert(msg);
 
   } catch (err) {
     console.error("POST error:", err);
+    alert("Error sending request. See console for details.");
   }
 }

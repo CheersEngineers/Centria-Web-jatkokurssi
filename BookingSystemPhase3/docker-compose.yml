@@ -8,9 +8,11 @@ services:
   web:
     build: .
     image: bs-phase3
+    environment:
+      - PORT=5001
     ports:
-      - "${PORT}:${PORT}"
+      - "5001:5001"
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-
+    restart: unless-stopped
