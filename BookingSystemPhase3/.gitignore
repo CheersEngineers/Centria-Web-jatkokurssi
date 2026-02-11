@@ -22,5 +22,5 @@ coverage/
 # Docker
 docker-compose.override.yml
 
-# Optional lockfile (only if you intentionally don't want it tracked)
-# package-lock.json
+# lockfiles
+package-lock.json
