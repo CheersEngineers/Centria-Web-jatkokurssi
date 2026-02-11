@@ -1,0 +1,26 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build / runtime artifacts
+dist/
+build/
+coverage/
+
+# Docker
+docker-compose.override.yml
+
+# Optional lockfile (only if you intentionally don't want it tracked)
+# package-lock.json
