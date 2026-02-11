@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resources | Booking System</title>
+
+    <!-- Tailwind CDN + Brand config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: "#e10e49",
+                            light: "#ffffff",
+                            dark: "#1e1e1e",
+                            blue: "#263f6a",
+                            green: "#284e36",
+                            orange: "#e37222",
+                            rose: "#c24d52",
+                        }
+                    },
+                    boxShadow: {
+                        soft: "0 8px 40px rgba(0, 0, 0, 0.45)",
+                    }
+                }
+            }
+        }
+    </script>
+    <script defer src="resources.js"></script>
+    <script defer src="form.js"></script>
+</head>
+
+<body class="min-h-screen flex flex-col bg-brand-light text-brand-dark">
+
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-brand-dark text-white shadow-soft">
+        <div class="mx-auto max-w-7xl px-6">
+            <div class="flex h-16 items-center justify-between">
+                <a href="/" class="flex items-center gap-3">
+                    <img src="logo.svg" alt="Booking System" class="h-10 w-10">
+                    <div class="leading-tight">
+                        <span class="block text-sm font-semibold">
+                            Booking System
+                        </span>
+                        <span class="block text-xs text-white/70">
+                            Secure resource booking
+                        </span>
+                    </div>
+                </a>
+
+                <nav class="flex items-center gap-3 hidden">
+                    <a href="/login"
+                        class="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 w-40 text-center">
+                        Sign in
+                    </a>
+                    <a href="/register"
+                        class="rounded-xl bg-brand-primary hover:border hover:border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 w-40 text-center">
+                        Create account
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-6 flex-grow">
+
+        <!-- Page header -->
+        <section class="py-12">
+            <div class="rounded-3xl bg-white p-8 shadow-soft">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <span
+                            class="inline-flex items-center gap-2 rounded-full bg-brand-blue/10 px-4 py-1 text-sm font-semibold text-brand-blue">
+                            Resource management
+                        </span>
+                        <h1 class="mt-4 text-3xl font-semibold leading-tight">
+                            Resources
+                        </h1>
+                        <p class="mt-2 max-w-2xl text-sm text-black/70">
+                            Create, update, or remove resources. Availability and pricing help users choose the right
+                            option.
+                        </p>
+                    </div>
+
+                    <!-- Optional helper chip -->
+                    <div class="rounded-2xl bg-brand-green/10 px-4 py-3 text-sm text-brand-green">
+                        Changes are saved via backend later.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Form -->
+        <section class="pb-16">
+            <div class="grid gap-8 lg:grid-cols-12">
+                <div class="lg:col-span-8">
+                    <div class="rounded-3xl bg-white p-8 shadow-soft">
+                        <h2 class="text-xl font-semibold">Resource form</h2>
+                        <p class="mt-1 text-sm text-black/60">
+                            All fields are required. Fill in the details below. Use Create for new items, Update for
+                            existing ones, and Delete to remove.
+                        </p>
+
+                        <form class="mt-8 space-y-6" id="resourceForm" novalidate>
+                            <!-- Resource name -->
+                            <div>
+                                <label for="resourceName" class="block text-sm font-semibold">
+                                    Resource name
+                                </label>
+                                <div id="resourceNameCnt"></div>
+                                <p class="mt-2 text-xs text-black/50">
+                                    Use a short, unique name users recognize (5–30 characters). Use letters, numbers,
+                                    and spaces only.
+                                </p>
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label for="resourceDescription" class="block text-sm font-semibold">
+                                    Resource description
+                                </label>
+                                <div id="resourceDescriptionCnt"></div>
+                                <p class="mt-2 text-xs text-black/50">
+                                    Keep it practical: what it is, and who it’s for (10–50 characters). Use letters,
+                                    numbers, and spaces only.
+                                </p>
+                            </div>
+
+                            <!-- Availability + Price -->
+                            <div class="grid gap-6 lg:grid-cols-3">
+
+                                <!-- Availability (Switch) -->
+                                <div class="lg:col-span-1">
+                                    <span class="block text-sm font-semibold mb-2">
+                                        Availability
+                                    </span>
+                                    <div class="ml-1 mt-2 mb-3 flex items-center min-h-[48px]">
+
+                                        <label class="inline-flex items-center cursor-pointer select-none">
+                                            <input type="checkbox" id="resourceAvailable" name="resourceAvailable"
+                                                class="sr-only peer" />
+
+                                            <div class="relative w-11 h-6 rounded-full bg-black/20
+               peer-checked:bg-brand-primary
+               transition-all duration-200
+               after:content-['']
+               after:absolute after:top-[2px] after:left-[2px]
+               after:w-5 after:h-5 after:bg-white after:rounded-full
+               after:transition-all duration-200
+               peer-checked:after:translate-x-5">
+                                            </div>
+
+                                            <span class="ml-3 text-sm text-black/70">
+                                                Available
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p class="mt-2 text-xs text-black/50">
+                                        When enabled, the resource is available for normal booking..
+                                    </p>
+                                </div>
+
+                                <!-- Price -->
+                                <div class="lg:col-span-2">
+                                    <label for="resourcePrice" class="block text-sm font-semibold">
+                                        Price
+                                    </label>
+
+                                    <!-- Price value -->
+                                    <div class="mt-2 flex gap-2 items-stretch">
+                                        <input id="resourcePrice" name="resourcePrice" type="number" placeholder="0.00"
+                                            min="0" step="0.01" class="w-full max-w-[180px] rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none
+           focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30
+           transition-all duration-200 ease-out" />
+
+                                        <span
+                                            class="inline-flex items-center rounded-2xl border border-black/10 bg-black/5 px-4 text-sm font-semibold text-black/70">
+                                            €
+                                        </span>
+                                    </div>
+
+
+                                    <!-- Price unit (Radio buttons) -->
+                                    <div class="mt-4 flex flex-wrap gap-4">
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="resourcePriceUnit" value="hour" checked>
+                                            <span class="text-sm">hour</span>
+                                        </label>
+
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="resourcePriceUnit" value="day">
+                                            <span class="text-sm">day</span>
+                                        </label>
+
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="resourcePriceUnit" value="week">
+                                            <span class="text-sm">week</span>
+                                        </label>
+
+                                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="resourcePriceUnit" value="month">
+                                            <span class="text-sm">month</span>
+                                        </label>
+                                    </div>
+
+                                    <p class="mt-2 text-xs text-black/50">
+                                        Set the price per selected time unit. Use 0 for free resources.
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+                            <!-- Actions -->
+                            <div id="resourceActions"
+                                class="mt-8 grid gap-4 w-full grid-cols-1 sm:grid-flow-col sm:auto-cols-fr"></div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right side (optional info card matching theme) -->
+                <aside class="lg:col-span-4">
+                    <div class="rounded-3xl bg-white p-6 shadow-soft">
+                        <h3 class="font-semibold">Good resource details</h3>
+                        <ul class="mt-4 space-y-2 text-sm text-black/70">
+                            <li>• Clear name users recognize</li>
+                            <li>• Practical description (capacity, location, notes)</li>
+                            <li>• Availability reflects real-world access</li>
+                            <li>• Pricing is consistent and predictable</li>
+                        </ul>
+                        <a href="index.html"
+                            class="mt-5 inline-block w-full rounded-2xl bg-brand-primary px-4 py-3 text-center text-sm text-white hover:bg-brand-dark/80 transition-all duration-200 ease-out">
+                            Back to homepage
+                        </a>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-brand-dark text-white">
+        <div class="mx-auto max-w-7xl px-6 py-10">
+
+            <!-- Top row -->
+            <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+
+                <!-- Brand -->
+                <div class="flex items-center gap-3">
+                    <img src="logo.svg" alt="Booking System" class="h-8 w-8 opacity-90">
+                    <div class="leading-tight">
+                        <p class="text-sm font-semibold">Booking System</p>
+                        <p class="text-xs text-white/60">
+                            Secure resource booking
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer navigation -->
+                <nav class="flex items-center gap-3 text-sm text-white/70">
+                    <a href="/privacypolicy"
+                        class="rounded-full px-3 py-1 hover:bg-white/10 hover:text-white transition">Privacy</a>
+                    <span class="text-white/30">|</span>
+                    <a href="/terms"
+                        class="rounded-full px-3 py-1 hover:bg-white/10 hover:text-white transition">Terms</a>
+                    <span class="text-white/30">|</span>
+                    <a href="/cookiepolicy"
+                        class="rounded-full px-3 py-1 hover:bg-white/10 hover:text-white transition">Cookies</a>
+                </nav>
+
+            </div>
+
+            <!-- Divider -->
+            <div class="mt-8 border-t border-white/10 pt-4 text-xs text-white/50">
+                © <span id="year"></span> Ville Heikkiniemi. All rights reserved. Source code licensed under the MIT
+                License.
+            </div>
+
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+
+</body>
+
+</html>
