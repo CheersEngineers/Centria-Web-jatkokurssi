@@ -1,0 +1,41 @@
+# BUILDING AND RUNNING: docker compose up -d --build
+# ONLY DATABASE: docker compose up -d --build database
+# LOGGING: docker logs booking-system-phase4-web -f
+# LOGGING: docker logs booking-system-phase4-db -f
+# CONNECTING TO CONTAINER: docker exec -it booking-system-phase4-web /bin/sh
+# CONNECTING TO CONTAINER: docker exec -it booking-system-phase4-db /bin/sh
+# CONNECTING TO DATABASE: docker exec -it booking-system-phase4-db psql -U booking_dbuser -d booking_db
+# STOPPING WEB: docker stop booking-system-phase4-web
+# REMOVING: docker compose down --volumes
+# REMOVING IMAGE (IF NEEDED): docker rmi bs-phase4
+name: booking-system-phase4
+services:
+  web:
+    build: .
+    image: bs-phase4
+    container_name: booking-system-phase4-web
+    environment:
+      PGHOST: database
+      PGPORT: ${PGPORT}
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+    ports:
+      - "${EPORT}:${IPORT}"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+  database:
+    image: postgres:latest
+    container_name: booking-system-phase4-db
+    environment:
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_DB: ${PGDATABASE}
+    ports:
+      - "${EPGPORT}:${PGPORT}"
+    volumes:
+      - pgroot:/var/lib/postgresql
+
+volumes:
+  pgroot: {}
