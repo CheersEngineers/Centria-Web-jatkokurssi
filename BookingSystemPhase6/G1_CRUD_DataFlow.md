@@ -21,31 +21,35 @@ sequenceDiagram
     participant F as Frontend (form.js and resources.js)
     participant B as Backend (Express Route)
     participant V as express-validator
-    participant S as Resource Service
     participant DB as PostgreSQL
+    participant L as Log Service
 
     U->>F: Submit form
     F->>F: Client-side validation
     F->>B: POST /api/resources (JSON)
 
-    B->>V: Validate request
+    B->>V: Validate request with resourceValidators
     V-->>B: Validation result
 
     alt Validation fails
-        B-->>F: 400 Bad Request + errors[]
+        B-->>F: 400 Bad Request + { ok: false, errors[] }
         F-->>U: Show validation message
     else Validation OK
-        B->>S: create Resource(data)
-        S->>DB: INSERT INTO resources
-        DB-->>S: Result / Duplicate error
+        B->>DB: INSERT INTO resources (name, description, available, price, price_unit)
+        DB-->>B: Created row / duplicate error
 
-        alt Duplicate
-            S-->>B: Duplicate detected
-            B-->>F: 409 Conflict
+        alt Duplicate resource name
+            B->>L: logEvent("Duplicate resource blocked")
+            L-->>B: Log saved
+            B-->>F: 409 Conflict + { ok: false, error: "Duplicate resource name" }
             F-->>U: Show duplicate message
+        else Database error
+            B-->>F: 500 Internal Server Error + { ok: false, error: "Database error" }
+            F-->>U: Show database error message
         else Success
-            S-->>B: Created resource
-            B-->>F: 201 Created
+            B->>L: logEvent("Resource created")
+            L-->>B: Log saved
+            B-->>F: 201 Created + { ok: true, data: createdResource }
             F-->>U: Show success message
         end
     end
@@ -137,29 +141,36 @@ sequenceDiagram
     participant U as User (Browser)
     participant F as Frontend (form.js and resources.js)
     participant B as Backend (Express Route)
-    participant S as Resource Service
     participant DB as PostgreSQL
+    participant L as Log Service
 
     U->>F: Click delete for resource
     F->>B: DELETE /api/resources/:id
 
-    B->>S: delete Resource(id)
-    S->>DB: DELETE FROM resources WHERE id = $1
-    DB-->>S: Delete result
+    B->>B: Convert req.params.id to Number
 
-    alt Resource not found
-        S-->>B: Resource not found
-        B-->>F: 404 Not Found
-        F-->>U: Show not found message
-    else Success
-        S-->>B: Delete successful
-        B-->>F: 204 No Content
-        F->>B: GET /api/resources
-        B->>S: list Resources()
-        S->>DB: SELECT resources
-        DB-->>S: Resource rows
-        S-->>B: Resource list
-        B-->>F: 200 OK + resources[]
-        F-->>U: Refresh resource list
+    alt Invalid ID
+        B-->>F: 400 Bad Request + { ok: false, error: "Invalid ID" }
+        F-->>U: Show invalid resource error
+    else Valid ID
+        B->>DB: DELETE FROM resources WHERE id = $1
+        DB-->>B: rowCount result
+
+        alt Resource not found
+            B-->>F: 404 Not Found + { ok: false, error: "Resource not found" }
+            F-->>U: Show not found message
+        else Database error
+            B-->>F: 500 Internal Server Error + { ok: false, error: "Database error" }
+            F-->>U: Show database error message
+        else Success
+            B->>L: logEvent("Resource deleted")
+            L-->>B: Log saved
+            B-->>F: 204 No Content
+            F->>B: GET /api/resources
+            B->>DB: SELECT * FROM resources ORDER BY created_at DESC
+            DB-->>B: Resource rows
+            B-->>F: 200 OK + { ok: true, data: rows }
+            F-->>U: Refresh resource list
+        end
     end
 ```
