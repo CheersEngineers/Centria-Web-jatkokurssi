@@ -1,0 +1,42 @@
+# BUILDING AND RUNNING: docker compose up -d --build
+# ONLY DATABASE: docker compose up -d --build database
+# LOGGING: docker logs booking-system-phase5-web -f
+# LOGGING: docker logs booking-system-phase5-db -f
+# CONNECTING TO CONTAINER: docker exec -it booking-system-phase5-web /bin/sh
+# CONNECTING TO CONTAINER: docker exec -it booking-system-phase5-db /bin/sh
+# CONNECTING TO DATABASE: docker exec -it booking-system-phase5-db psql -U booking_dbuser -d booking_db
+# STOPPING WEB: docker stop booking-system-phase5-web
+# REMOVING: docker compose down --volumes
+# REMOVING IMAGE (IF NEEDED): docker rmi bs-phase5
+name: booking-system-phase5
+services:
+  web:
+    build: .
+    image: bs-phase5
+    container_name: booking-system-phase5-web
+    environment:
+      PGHOST: database
+      PGPORT: ${PGPORT}
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+    ports:
+      - "${EPORT}:${IPORT}"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+  database:
+    image: postgres:latest
+    container_name: booking-system-phase5-db
+    environment:
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_DB: ${PGDATABASE}
+    ports:
+      - "${EPGPORT}:${PGPORT}"
+    volumes:
+      - pgroot:/var/lib/postgresql
+      - ./db/init:/docker-entrypoint-initdb.d
+
+volumes:
+  pgroot: {}
