@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none"
+     xmlns="http://www.w3.org/2000/svg" aria-label="Booking System logo">
+  <rect x="0" y="0" width="64" height="64" rx="14" fill="#e10e49"/>
+  <text x="50%" y="50%"
+        text-anchor="middle"
+        dominant-baseline="central"
+        font-family="Inter, system-ui, -apple-system, sans-serif"
+        font-size="28"
+        font-weight="800"
+        fill="white">
+    BS
+  </text>
+</svg>
