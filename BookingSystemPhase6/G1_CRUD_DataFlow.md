@@ -1,4 +1,4 @@
-# 1️⃣ CREATE – RResource (Sequence Diagram)
+# 1️⃣ CREATE – Resource (Sequence Diagram)
 
 ```mermaid
 sequenceDiagram
