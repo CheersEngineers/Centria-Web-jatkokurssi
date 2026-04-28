@@ -129,3 +129,93 @@ button:hover {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+************************************************
+/* THIS PART IS ADDED TO IMPROVE THE STYLES */
+************************************************
+
+.customer-form-wrapper,
+.customer-list {
+  margin-top: 1rem;
+}
+
+.customer-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-row {
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.form-row label {
+  font-weight: 700;
+}
+
+.form-row input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  background: #ffffff;
+}
+
+.form-row input:focus {
+  outline: 3px solid rgba(225, 14, 73, 0.18);
+  border-color: var(--primary);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.form-actions button {
+  margin-top: 0;
+}
+
+.secondary-button {
+  background: var(--accent);
+}
+
+.danger-button {
+  background: #9b1c1c;
+}
+
+.form-message {
+  min-height: 1.4rem;
+  margin: 0.25rem 0 0;
+  font-weight: 700;
+}
+
+.form-message.info {
+  color: var(--accent);
+}
+
+.form-message.success {
+  color: #0f7a35;
+}
+
+.form-message.error {
+  color: #b00020;
+}
+
+.customer-card p {
+  margin: 0.25rem 0 0;
+}
+
+.customer-card.selected {
+  border-left-color: var(--accent);
+  background: #f4f7ff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+.customer-card:focus {
+  outline: 3px solid rgba(38, 63, 106, 0.25);
+  outline-offset: 2px;
+}
