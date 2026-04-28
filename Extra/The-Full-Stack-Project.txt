@@ -1,0 +1,573 @@
+🌟 Note to the reader of the material
+The following material has been produced with the help of AI and have not been edited. You will see two different approaches. Under the heading React + API + Database with Docker Compose you will find more step‑by‑step instructions, which can often be challenging. Since AI cannot know your environment, there may be errors in those instructions.
+
+Under the heading Introduction: Node.js & npm Ecosystem you will find general information, which is often very accurate and reliable.
+
+The goal of this course has been to teach and demonstrate sensible ways to use AI. I hope I have succeeded in this.
+
+📘 React + API + Database with Docker Compose
+🎯 Goal
+In this setup, we will build a small full stack application with:
+
+React as the frontend
+Nginx as the frontend web server
+Node.js / Express as the backend API
+PostgreSQL as the database
+Docker Compose to run everything together
+🧠 Architecture
+Browser
+   ↓
+Nginx (serves React build)
+   ↓
+React app
+   ↓
+/api requests
+   ↓
+Node.js / Express API
+   ↓
+PostgreSQL
+🔑 Main idea
+React is built into static files
+Nginx serves those files
+React sends API requests to /api/...
+Nginx forwards /api traffic to the backend service
+Backend communicates with PostgreSQL
+📁 Suggested project structure
+fullstack-app/
+├── docker-compose.yml
+├── frontend/
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+│       ├── App.jsx
+│       └── main.jsx
+├── backend/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── server.js
+│   └── db.js
+└── db/
+    └── init.sql
+1️⃣ docker-compose.yml
+services:
+  frontend:
+    build:
+      context: ./frontend
+    container_name: fullstack-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./backend
+    container_name: fullstack-api
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: apppassword
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    container_name: fullstack-db
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:
+2️⃣ Frontend Dockerfile
+This Dockerfile builds the React app and then serves it with Nginx.
+
+frontend/Dockerfile
+# Stage 1: Build React app
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+3️⃣ Nginx configuration
+This config does two important things:
+
+serves the React app
+forwards /api requests to the backend
+frontend/nginx.conf
+server {
+    listen 80;
+    server_name localhost;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://api:3000/api/;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+4️⃣ Frontend package.json
+frontend/package.json
+{
+  "name": "frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
+5️⃣ Frontend React app
+This example fetches data from the backend API.
+
+frontend/src/App.jsx
+import { useEffect, useState } from "react";
+
+function App() {
+  const [message, setMessage] = useState("Loading...");
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const healthRes = await fetch("/api/health");
+        const healthData = await healthRes.json();
+        setMessage(healthData.message);
+
+        const usersRes = await fetch("/api/users");
+        const usersData = await usersRes.json();
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Fetch failed:", error);
+        setMessage("Failed to connect to API");
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  return (
+    <main style={{ fontFamily: "Arial, sans-serif", padding: "2rem" }}>
+      <h1>React + API + Database</h1>
+      <p>{message}</p>
+
+      <h2>Users from database</h2>
+      {users.length === 0 ? (
+        <p>No users found.</p>
+      ) : (
+        <ul>
+          {users.map((user) => (
+            <li key={user.id}>
+              {user.name} ({user.email})
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+  );
+}
+
+export default App;
+frontend/src/main.jsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+6️⃣ Backend Dockerfile
+backend/Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+7️⃣ Backend package.json
+backend/package.json
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "cors": "^2.8.5"
+  }
+}
+8️⃣ Backend database connection
+backend/db.js
+import pg from "pg";
+
+const { Pool } = pg;
+
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+});
+
+export default pool;
+9️⃣ Backend API
+backend/server.js
+import express from "express";
+import cors from "cors";
+import pool from "./db.js";
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/api/health", (req, res) => {
+  res.json({ message: "API is running successfully 🚀" });
+});
+
+app.get("/api/users", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, name, email FROM users ORDER BY id ASC"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Database query failed:", error);
+    res.status(500).json({ error: "Database query failed" });
+  }
+});
+
+app.post("/api/users", async (req, res) => {
+  try {
+    const { name, email } = req.body;
+
+    const result = await pool.query(
+      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, name, email",
+      [name, email]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Insert failed:", error);
+    res.status(500).json({ error: "Insert failed" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`API listening on port ${PORT}`);
+});
+🔟 Database initialization
+db/init.sql
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE
+);
+
+INSERT INTO users (name, email)
+VALUES
+    ('Alice', 'alice@example.com'),
+    ('Bob', 'bob@example.com')
+ON CONFLICT (email) DO NOTHING;
+▶️ How to run the project
+From the project root:
+
+docker compose up --build
+Then open:
+
+http://localhost:8080
+✅ What should happen?
+When the app starts:
+
+React is served by Nginx
+React calls /api/health
+Nginx forwards that request to the api container
+The backend responds
+React also fetches /api/users
+Backend reads users from PostgreSQL
+React displays the users
+🔍 Important concept: service names inside Docker Compose
+In Docker Compose, services can talk to each other by service name.
+
+For example:
+
+frontend uses http://api:3000
+backend uses db as the database host
+That is why this works:
+
+proxy_pass http://api:3000/api/;
+and this works:
+
+host: process.env.DB_HOST
+where DB_HOST=db
+
+🧠 Why use Nginx in front of React?
+Because Nginx is excellent for serving static files:
+
+fast
+lightweight
+common in production
+works well with reverse proxy rules
+So Nginx can do both:
+
+serve frontend files
+proxy API requests
+⚠️ Common mistakes
+1. Using localhost inside containers
+Inside Docker Compose, localhost means the container itself.
+
+So backend should not use:
+
+localhost:5432
+for PostgreSQL.
+
+It should use:
+
+db:5432
+because the database service is named db.
+
+2. Forgetting React Router fallback
+Without this:
+
+try_files $uri /index.html;
+subpages may return 404.
+
+3. Confusing build-time and runtime
+Node builds the React app
+Nginx serves the built files
+browser runs React
+4. Expecting database to be instantly ready
+Sometimes the backend may start before PostgreSQL is fully ready.
+
+depends_on helps with startup order, but not always full readiness. For simple student demos this is usually enough, but in more robust setups you may want a healthcheck or retry logic.
+
+🧪 Testing the API manually
+You can test the backend with curl.
+
+Get users
+curl http://localhost:8080/api/users
+Create user
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ville","email":"ville@example.com"}'
+🎓 Summary
+This full stack setup gives you:
+
+frontend: React
+web server: Nginx
+backend: Node.js / Express
+database: PostgreSQL
+orchestration: Docker Compose
+Final flow
+Browser
+  → Nginx
+    → React app
+    → /api requests to backend
+      → PostgreSQL
+📘 Introduction: Node.js & npm Ecosystem
+🎯 Learning goals
+After this section, you will understand:
+
+what Node.js is
+what npm is and why it is used
+what package.json and lock files do
+common npm commands used in real projects
+🧠 What is Node.js?
+Node.js is a runtime environment that allows you to run JavaScript outside the browser.
+
+👉 With Node.js, you can build:
+
+backend APIs (Express)
+CLI tools
+scripts and automation
+full stack applications
+💡 Key idea
+Browser → runs frontend JavaScript Node.js → runs backend JavaScript
+
+📦 What is npm?
+npm (Node Package Manager) is:
+
+a package manager
+a registry of libraries
+a tool for managing dependencies
+👉 It allows you to install and use external code:
+
+npm install express
+📄 package.json (the heart of a project)
+Every Node project usually contains:
+
+package.json
+🔍 What does it contain?
+Example:
+
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
+🧩 Key parts
+name / version → project metadata
+scripts → reusable commands
+dependencies → required libraries
+devDependencies → development-only tools
+▶️ Running scripts
+npm run start
+👉 Executes:
+
+node server.js
+🔒 Lock file (package-lock.json)
+When you run:
+
+npm install
+npm creates:
+
+package-lock.json
+🎯 Purpose
+locks exact versions of dependencies
+ensures same install for everyone
+improves security and reproducibility
+💡 Example
+In package.json:
+
+"express": "^4.21.2"
+👉 means “compatible versions allowed”
+
+In package-lock.json:
+
+"express": "4.21.2"
+👉 exact version used
+
+⚙️ Common npm commands
+📥 Install dependencies
+npm install
+👉 installs everything from package.json
+
+➕ Install a package
+npm install express
+👉 adds to dependencies
+
+➕ Install dev dependency
+npm install vite --save-dev
+👉 adds to devDependencies
+
+▶️ Run scripts
+npm run dev
+npm run build
+npm run start
+🔍 Audit (security check)
+npm audit
+👉 checks for vulnerabilities
+
+Fix issues
+npm audit fix
+💰 Fund information
+npm fund
+👉 shows which packages are funded / supported
+
+🧹 Remove package
+npm uninstall express
+🔄 Update dependencies
+npm update
+🧠 Dependency types
+📦 dependencies
+Used in production:
+
+"dependencies": {
+  "express": "^4.21.2"
+}
+🛠 devDependencies
+Used only in development:
+
+"devDependencies": {
+  "vite": "^7.0.0"
+}
+🔄 Typical workflow
+1. Create project
+npm init -y
+2. Install dependencies
+npm install express
+3. Run project
+npm run start
+4. Install all dependencies later
+npm install
+👉 uses both:
+
+package.json
+package-lock.json
+⚠️ Common beginner mistakes
+❌ Deleting package-lock.json randomly
+👉 breaks reproducibility
+
+❌ Not committing lock file to Git
+👉 team members get different versions
+
+❌ Installing everything globally
+npm install -g something
+👉 usually not needed
+
+❌ Mixing dependencies incorrectly
+build tools → devDependencies
+runtime libraries → dependencies
+🎯 Key takeaway
+Node.js runs JavaScript on the server npm manages dependencies package.json defines the project package-lock.json guarantees consistency
+
+🚀 One-sentence summary
+👉 Node.js executes your code, npm manages your ecosystem, and package files keep everything predictable.
